@@ -13,7 +13,7 @@ const Features = () => {
   // Grid buttons data with local images
   const gridData = [
     { title: "Crop Disease Classification", image: cropImage, link: "/(Crop-Disease)/crop-disease" },
-    { title: "Farmer Connect", image: farmerImage, link: "/farmer-connect" },
+    { title: "Farmer Connect", image: farmerImage, link: "/(Farmer-Connect)/farmerconnect" },
     { title: "Weather Connect", image: droneImage, link: "/(Weather)/weatheradvise" },
     { title: "Govt Scheme", image: schemeImage, link: "/(Govt-Scheme)/govt-schemes" },
   ];

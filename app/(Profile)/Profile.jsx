@@ -1,39 +1,43 @@
-import { View, Text, TouchableOpacity, Alert, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, FlatList, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../../context/AuthContext'; // make sure the path is correct
+import { supabase } from '../../utils/supabase/client';
 
 const Profile = () => {
   const router = useRouter();
+  const { session, signOut } = useAuth();
+  const [userDetails, setUserDetails] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Simulated User Data (Replace with real data)
-  const [user, setUser] = useState({
-    name: "John Doe",
-    email: "johndoe@example.com",
-    phone: "9876543210",
-    district: "Pune",
-  });
+  // Fetch user details from Supabase
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      try {
+        setLoading(true);
 
-  // FAQ Section Data
-  const faqData = [
-    { question: "How can I apply for a farming scheme?", answer: "You can apply via the government website or visit the nearest agriculture office." },
-    { question: "What are the benefits of Kisan Credit Card?", answer: "It provides easy credit access with low-interest rates for farmers." },
-    { question: "How to check scheme eligibility?", answer: "Check eligibility on the scheme's official page or consult an agriculture officer." },
-  ];
+        if (session?.user) {
+          const { data, error } = await supabase
+            .from('user')
+            .select('*')
+            .eq('userid', session.user.id)
+            .single();
 
-  // State for handling open FAQ items
-  const [openFAQ, setOpenFAQ] = useState(null);
+          if (error) throw error;
 
-  // Function to toggle FAQ visibility
-  const toggleFAQ = (index) => {
-    setOpenFAQ(openFAQ === index ? null : index);
-  };
+          setUserDetails(data);
+        }
+      } catch (error) {
+        console.error('Failed to load user details:', error.message);
+        Alert.alert('Error', 'Failed to load user data');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Dummy Applied Schemes Data (Replace with real applied schemes)
-  const appliedSchemes = [
-    { title: "PM-Kisan Samman Nidhi", status: "Approved" },
-    { title: "Soil Health Card Scheme", status: "Pending" },
-  ];
+    fetchUserDetails();
+  }, [session]);
 
   // Logout function
   const handleLogout = () => {
@@ -41,17 +45,39 @@ const Profile = () => {
       { text: "Cancel", style: "cancel" },
       {
         text: "Logout",
-        onPress: () => {
-          // Perform logout actions (Clear auth tokens, etc.)
-          router.push('/sign-in'); // Redirect to Sign-in
+        onPress: async () => {
+          await signOut(); // uses AuthContext to logout
+          router.push('/sign-in');
         },
       },
     ]);
   };
 
+  const faqData = [
+    { question: "How can I apply for a farming scheme?", answer: "You can apply via the government website or visit the nearest agriculture office." },
+    { question: "What are the benefits of Kisan Credit Card?", answer: "It provides easy credit access with low-interest rates for farmers." },
+    { question: "How to check scheme eligibility?", answer: "Check eligibility on the scheme's official page or consult an agriculture officer." },
+  ];
+
+  const appliedSchemes = [
+    { title: "PM-Kisan Samman Nidhi", status: "Approved" },
+    { title: "Soil Health Card Scheme", status: "Pending" },
+  ];
+
+  const [openFAQ, setOpenFAQ] = useState(null);
+  const toggleFAQ = (index) => setOpenFAQ(openFAQ === index ? null : index);
+
+  if (loading) {
+    return (
+      <View className="flex-1 justify-center items-center">
+        <ActivityIndicator size="large" color="#678a1d" />
+      </View>
+    );
+  }
+
   return (
     <View className="flex-1 p-6">
-      {/* Header with Logout */}
+      {/* Header */}
       <View className="flex-row justify-between items-center mb-6">
         <Text className="text-2xl font-bold text-[#678a1d]">👤 Profile</Text>
         <TouchableOpacity onPress={handleLogout}>
@@ -59,22 +85,22 @@ const Profile = () => {
         </TouchableOpacity>
       </View>
 
-      {/* User Information Card */}
+      {/* User Info Card */}
       <View className="p-6 rounded-xl shadow-md border border-[#678a1d]">
         <Text className="text-lg font-semibold text-[#678a1d]">👨‍🌾 Name:</Text>
-        <Text className="text-gray-700 mb-3">{user.name}</Text>
+        <Text className="text-gray-700 mb-3">{userDetails?.name}</Text>
 
         <Text className="text-lg font-semibold text-[#678a1d]">📧 Email:</Text>
-        <Text className="text-gray-700 mb-3">{user.email}</Text>
+        <Text className="text-gray-700 mb-3">{userDetails?.email}</Text>
 
         <Text className="text-lg font-semibold text-[#678a1d]">📞 Phone:</Text>
-        <Text className="text-gray-700 mb-3">{user.phone}</Text>
+        <Text className="text-gray-700 mb-3">{userDetails?.phone}</Text>
 
         <Text className="text-lg font-semibold text-[#678a1d]">📍 District:</Text>
-        <Text className="text-gray-700">{user.district}</Text>
+        <Text className="text-gray-700">{userDetails?.district}</Text>
       </View>
 
-      {/* FAQ Section */}
+      {/* FAQ */}
       <Text className="text-xl font-bold text-[#678a1d] mt-6 mb-2">❓ Frequently Asked Questions</Text>
       <View className="rounded-xl shadow-md p-4 border border-[#678a1d]">
         {faqData.map((item, index) => (
@@ -92,7 +118,7 @@ const Profile = () => {
         ))}
       </View>
 
-      {/* Applied Schemes Section */}
+      {/* Applied Schemes */}
       <Text className="text-xl font-bold text-[#678a1d] mt-6 mb-2">📜 Your Applied Schemes</Text>
       <View className="rounded-xl shadow-md p-4 border border-[#678a1d]">
         {appliedSchemes.length > 0 ? (

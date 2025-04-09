@@ -1,10 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, Alert, Modal, FlatList, StyleSheet } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 
+const CROP_OPTIONS = [
+  { id: 1, name: 'Rice' },
+  { id: 2, name: 'Tomato' },
+  { id: 3, name: 'Potato' },
+  { id: 4, name: 'Grapes' },
+];
+
 const CropDisease = () => {
-  const [cropName, setCropName] = useState('');
+  const [selectedCrop, setSelectedCrop] = useState(null);
+  const [showDropdown, setShowDropdown] = useState(false);
   const [image, setImage] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
@@ -38,8 +46,8 @@ const CropDisease = () => {
   };
 
   const analyzeDisease = () => {
-    if (!cropName) {
-      Alert.alert('Missing Information', 'Please enter the crop name');
+    if (!selectedCrop) {
+      Alert.alert('Missing Information', 'Please select a crop');
       return;
     }
     
@@ -49,12 +57,29 @@ const CropDisease = () => {
     }
     
     setIsAnalyzing(true);
-    // Here you would typically call your disease detection API
+    console.log(`Selected crop: ${selectedCrop.name}`);
+    
     setTimeout(() => {
       setIsAnalyzing(false);
-      Alert.alert('Analysis Complete', `Disease analysis for ${cropName} is complete!`);
+      Alert.alert(
+        'Analysis Complete', 
+        `Disease analysis for ${selectedCrop.name} is complete!`
+      );
     }, 2000);
   };
+
+  const renderCropItem = ({ item }) => (
+    <TouchableOpacity
+      style={styles.dropdownItem}
+      onPress={() => {
+        setSelectedCrop(item);
+        setShowDropdown(false);
+        console.log(`Selected crop: ${item.name}`); // Log when crop is selected
+      }}
+    >
+      <Text style={styles.dropdownItemText}>{item.name}</Text>
+    </TouchableOpacity>
+  );
 
   return (
     <View className="flex-1 p-5 bg-gray-50">
@@ -62,15 +87,23 @@ const CropDisease = () => {
         Crop Disease Detection
       </Text>
       
-      {/* Crop Name Input */}
-      <View className="flex-row items-center bg-white rounded-xl px-4 py-3 mb-5 shadow-md">
-        <MaterialIcons name="local-florist" size={24} color="#4CAF50" />
-        <TextInput
-          className="flex-1 ml-3 text-base"
-          placeholder="Enter crop name (e.g., Tomato, Rice)"
-          value={cropName}
-          onChangeText={setCropName}
-        />
+      {/* Crop Selection Dropdown */}
+      <View className="mb-5">
+        <Text className="text-gray-600 mb-2">Select Crop:</Text>
+        <TouchableOpacity
+          className="flex-row items-center bg-white rounded-xl px-4 py-3 shadow-md"
+          onPress={() => setShowDropdown(true)}
+        >
+          <MaterialIcons name="local-florist" size={24} color="#4CAF50" />
+          <Text className="flex-1 ml-3 text-base">
+            {selectedCrop ? selectedCrop.name : 'Select a crop...'}
+          </Text>
+          <MaterialIcons 
+            name={showDropdown ? "keyboard-arrow-up" : "keyboard-arrow-down"} 
+            size={24} 
+            color="#666" 
+          />
+        </TouchableOpacity>
       </View>
       
       {/* Image Section */}
@@ -105,14 +138,58 @@ const CropDisease = () => {
       <TouchableOpacity 
         className={`py-4 rounded-xl ${isAnalyzing ? 'bg-gray-400' : 'bg-green-900'}`}
         onPress={analyzeDisease}
-        disabled={isAnalyzing}
+        disabled={isAnalyzing || !selectedCrop}
       >
         <Text className="text-white font-bold text-center">
           {isAnalyzing ? 'Analyzing...' : 'Detect Disease'}
         </Text>
       </TouchableOpacity>
+      
+      {/* Dropdown Modal */}
+      <Modal
+        visible={showDropdown}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowDropdown(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.dropdownContainer}>
+            <FlatList
+              data={CROP_OPTIONS}
+              renderItem={renderCropItem}
+              keyExtractor={(item) => item.id.toString()}
+              ItemSeparatorComponent={() => <View style={styles.separator} />}
+            />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  dropdownContainer: {
+    backgroundColor: 'white',
+    marginHorizontal: 20,
+    borderRadius: 10,
+    maxHeight: '60%',
+  },
+  dropdownItem: {
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+  },
+  dropdownItemText: {
+    fontSize: 16,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: '#eee',
+  },
+});
 
 export default CropDisease;
