@@ -4,10 +4,10 @@ import * as ImagePicker from 'expo-image-picker';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 
 const CROP_OPTIONS = [
-  { id: 1, name: 'Rice' },
+  { id: 1, name: 'paddy' },
   { id: 2, name: 'Tomato' },
   { id: 3, name: 'Potato' },
-  { id: 4, name: 'Grapes' },
+  { id: 4, name: 'Grape' },
 ];
 
 const CropDisease = () => {
@@ -56,10 +56,9 @@ const CropDisease = () => {
   };
 
 
-  const analyzeDisease = () => {
+  const analyzeDisease = async () => {  // Added async here
     if (!selectedCrop) {
       Alert.alert('Missing Information', 'Please select a crop');
-
       return;
     }
     
@@ -68,15 +67,14 @@ const CropDisease = () => {
       return;
     }
 
-    const lowerCrop = cropName.toLowerCase().trim();
-    if (!['paddy', 'grape', 'potato'].includes(lowerCrop)) {
-      Alert.alert('Invalid Crop', 'Supported crops are Paddy, Grape, Potato');
+    const lowerCrop = selectedCrop.name.toLowerCase().trim();  // Changed from cropName to selectedCrop.name
+    if (!['paddy', 'tomato', 'potato', 'grape'].includes(lowerCrop)) {  // Updated to match your CROP_OPTIONS
+      Alert.alert('Invalid Crop', 'Supported crops are Rice, Tomato, Potato, Grapes');
       return;
     }
 
     setIsAnalyzing(true);
 
-    
     const formData = new FormData();
     formData.append('disease_type', lowerCrop);
     formData.append('lang', 'en');
@@ -87,9 +85,12 @@ const CropDisease = () => {
     });
 
     try {
-      const response = await fetch('http://10.25.12.80:8000/predict/', {
+      const response = await fetch('http://192.168.1.100:8002/predict/', {
         method: 'POST',
         body: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
       if (!response.ok) {
@@ -104,15 +105,17 @@ const CropDisease = () => {
         `Confidence: ${(data.confidence * 100).toFixed(2)}%\n\n` +
         `Cause: ${data.cause}\n\n` +
         `Prevention: ${data.prevention}\n\n` +
-        `Treatment: ${data.treatment}`
+        `Treatment: ${data.treatment}\n\n` +
+        `Youtube Videos:\n${data.youtube_links.map((video, index) => `${index + 1}. ${video.title}\n${video.url}`).join('\n\n')}`
       );
+      
     } catch (error) {
+      console.error('Analysis error:', error);
       Alert.alert('Error', error.message || 'An error occurred during analysis');
     } finally {
       setIsAnalyzing(false);
     }
-
-  };
+};
 
   const renderCropItem = ({ item }) => (
     <TouchableOpacity
