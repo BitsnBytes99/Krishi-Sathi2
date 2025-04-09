@@ -17,37 +17,49 @@ const CropDisease = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const pickImage = async (fromCamera = false) => {
-    let result;
-    
-    if (fromCamera) {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission required', 'We need camera permission to take photos');
-        return;
+    try {
+      let result;
+      
+      if (fromCamera) {
+        const cameraStatus = await ImagePicker.requestCameraPermissionsAsync();
+        if (cameraStatus.status !== 'granted') {
+          Alert.alert('Permission required', 'We need camera permission to take photos');
+          return;
+        }
+      } else {
+        const galleryStatus = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (galleryStatus.status !== 'granted') {
+          Alert.alert('Permission required', 'We need gallery permission to select photos');
+          return;
+        }
       }
-      result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 1,
-      });
-    } else {
-      result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 1,
-      });
-    }
 
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
+      result = await (fromCamera 
+        ? ImagePicker.launchCameraAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: false,
+            quality: 1,
+          })
+        : ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: false,
+            quality: 1,
+          }));
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Image picker error:', error);
+      Alert.alert('Error', 'Failed to pick image: ' + error.message);
     }
   };
+
 
   const analyzeDisease = () => {
     if (!selectedCrop) {
       Alert.alert('Missing Information', 'Please select a crop');
+
       return;
     }
     
@@ -55,17 +67,51 @@ const CropDisease = () => {
       Alert.alert('Missing Image', 'Please select or capture an image');
       return;
     }
-    
+
+    const lowerCrop = cropName.toLowerCase().trim();
+    if (!['paddy', 'grape', 'potato'].includes(lowerCrop)) {
+      Alert.alert('Invalid Crop', 'Supported crops are Paddy, Grape, Potato');
+      return;
+    }
+
     setIsAnalyzing(true);
-    console.log(`Selected crop: ${selectedCrop.name}`);
+
     
-    setTimeout(() => {
-      setIsAnalyzing(false);
+    const formData = new FormData();
+    formData.append('disease_type', lowerCrop);
+    formData.append('lang', 'en');
+    formData.append('file', {
+      uri: image,
+      name: 'image.jpg',
+      type: 'image/jpeg'
+    });
+
+    try {
+      const response = await fetch('http://10.25.12.80:8000/predict/', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Analysis failed');
+      }
+
+      const data = await response.json();
       Alert.alert(
-        'Analysis Complete', 
-        `Disease analysis for ${selectedCrop.name} is complete!`
+        'Analysis Complete',
+        `Disease: ${data.translated_class || data.predicted_class}\n\n` +
+        `Confidence: ${(data.confidence * 100).toFixed(2)}%\n\n` +
+        `Cause: ${data.cause}\n\n` +
+        `Prevention: ${data.prevention}\n\n` +
+        `Treatment: ${data.treatment}`
       );
-    }, 2000);
+    } catch (error) {
+      Alert.alert('Error', error.message || 'An error occurred during analysis');
+    } finally {
+      setIsAnalyzing(false);
+    }
+
   };
 
   const renderCropItem = ({ item }) => (
@@ -109,7 +155,7 @@ const CropDisease = () => {
       {/* Image Section */}
       <View className="mb-5">
         {image ? (
-          <Image source={{ uri: image }} className="w-full h-64 rounded-xl mb-3" />
+          <Image source={{ uri: image }} className="w-full h-80 rounded-xl mb-3" />
         ) : (
           <View className="w-full h-64 bg-gray-200 rounded-xl mb-3 justify-center items-center">
             <FontAwesome name="photo" size={50} color="#9E9E9E" />
@@ -166,6 +212,7 @@ const CropDisease = () => {
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   modalOverlay: {
