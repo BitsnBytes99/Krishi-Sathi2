@@ -1,98 +1,235 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import axios from 'axios';
+import { View, Text, StyleSheet, Image, ScrollView, RefreshControl, ActivityIndicator } from 'react-native'
+import React, { useState, useEffect } from 'react'
+import axios from 'axios'
 
-const SensorScreen = () => {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+const SmartFarm = () => {
+  const [sensorData, setSensorData] = useState({})
+  const [heatmapUri, setHeatmapUri] = useState(null)
+  const [refreshing, setRefreshing] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  // Replace with your ESP8266's IP address
-  const ESP_IP = '192.168.220.211';
+  // Replace with your actual API base URL
+  const API_BASE_URL = 'http://192.168.220.31:8080'
+
+  // In your fetchData function:
+const fetchData = async () => {
+  try {
+    setRefreshing(true)
+    setLoading(true)
+    setError(null)
+    
+    // Fetch all sensor data
+    const dataResponse = await axios.get(`${API_BASE_URL}/all-data`)
+    setSensorData(dataResponse.data)
+    
+    // Get latest heatmap URL
+    const heatmapResponse = await axios.get(`${API_BASE_URL}/latest-heatmap-url`)
+    setHeatmapUri(`${API_BASE_URL}${heatmapResponse.data.url}`)
+    
+    setLastUpdated(new Date().toLocaleTimeString())
+  } catch (error) {
+    console.error('Error fetching data:', error)
+    setError(`Failed to load data: ${error.message}`)
+  } finally {
+    setRefreshing(false)
+    setLoading(false)
+  }
+}
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axios.get(`http://${ESP_IP}/data`);
-        setData(response.data);
-        setLoading(false);
-      } catch (err) {
-        setError(err.message);
-        setLoading(false);
-      }
-    };
+    // Initial data fetch
+    fetchData()
+    
+    // Set up interval for automatic refresh (every minute)
+    const interval = setInterval(fetchData, 60000)
+    
+    // Clean up interval on component unmount
+    return () => clearInterval(interval)
+  }, [])
 
-    fetchData();
-    const interval = setInterval(fetchData, 3000); // Update every 3 seconds
-
-    return () => clearInterval(interval);
-  }, []);
-
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.error}>Error: {error}</Text>
-      </View>
-    );
+  const renderSensorData = () => {
+    return Object.entries(sensorData).map(([deviceName, data]) => {
+      const isError = 'error' in data
+      const timestamp = new Date(data.timestamp).toLocaleString()
+      const sensorData = data.data || {}
+      
+      return (
+        <View key={deviceName} style={styles.sensorCard}>
+          <Text style={styles.deviceName}>{deviceName}</Text>
+          <Text style={styles.timestamp}>Last updated: {timestamp}</Text>
+          
+          {isError ? (
+            <Text style={styles.errorText}>Error: {data.error}</Text>
+          ) : (
+            <View style={styles.sensorData}>
+              <View style={styles.dataRow}>
+                <Text style={styles.dataLabel}>🌱 Soil Moisture:</Text>
+                <Text style={styles.dataValue}>{sensorData.soil_moisture_percent || '--'}%</Text>
+              </View>
+              <View style={styles.dataRow}>
+                <Text style={styles.dataLabel}>🌡️ Temperature:</Text>
+                <Text style={styles.dataValue}>{sensorData.temperature || '--'}°C</Text>
+              </View>
+              <View style={styles.dataRow}>
+                <Text style={styles.dataLabel}>💧 Humidity:</Text>
+                <Text style={styles.dataValue}>{sensorData.humidity || '--'}%</Text>
+              </View>
+            </View>
+          )}
+        </View>
+      )
+    })
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Environment Sensor</Text>
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={fetchData} />
+      }
+    >
+      <Text style={styles.title}>Smart Farm Monitoring</Text>
       
-      <View style={styles.dataContainer}>
-        <Text style={styles.label}>Temperature:</Text>
-        <Text style={styles.value}>
-          {data.temperature}°C ({(data.temperature * 9/5 + 32).toFixed(1)}°F)
-        </Text>
-      </View>
+      {lastUpdated && (
+        <Text style={styles.lastUpdated}>Last updated: {lastUpdated}</Text>
+      )}
       
-      <View style={styles.dataContainer}>
-        <Text style={styles.label}>Humidity:</Text>
-        <Text style={styles.value}>{data.humidity}%</Text>
-      </View>
-    </View>
-  );
-};
+      {error && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      )}
+      
+      {/* Heatmap Section */}
+      <Text style={styles.sectionTitle}>Soil Moisture Heatmap</Text>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#2c3e50" />
+        </View>
+      ) : heatmapUri ? (
+        <Image 
+          source={{ uri: heatmapUri }} 
+          style={styles.heatmapImage}
+          resizeMode="contain"
+          onError={(e) => console.log('Image load error:', e.nativeEvent.error)}
+        />
+      ) : (
+        <Text style={styles.noDataText}>Heatmap not available</Text>
+      )}
+      
+      {/* Sensor Data Section */}
+      <Text style={styles.sectionTitle}>Sensor Data</Text>
+      {loading && Object.keys(sensorData).length === 0 ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color="#2c3e50" />
+          <Text style={styles.loadingText}>Loading sensor data...</Text>
+        </View>
+      ) : Object.keys(sensorData).length > 0 ? (
+        renderSensorData()
+      ) : (
+        <Text style={styles.noDataText}>No sensor data available</Text>
+      )}
+    </ScrollView>
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+    padding: 16,
     backgroundColor: '#f5f5f5',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 30,
+    marginBottom: 8,
+    color: '#2c3e50',
+    textAlign: 'center',
   },
-  dataContainer: {
-    marginBottom: 20,
-    alignItems: 'center',
+  lastUpdated: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    marginBottom: 16,
+    textAlign: 'center',
   },
-  label: {
+  sectionTitle: {
     fontSize: 18,
-    color: '#666',
+    fontWeight: '600',
+    marginTop: 16,
+    marginBottom: 8,
+    color: '#34495e',
   },
-  value: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginTop: 5,
+  heatmapImage: {
+    width: '100%',
+    height: 300,
+    marginBottom: 16,
+    borderRadius: 8,
+    backgroundColor: '#ecf0f1',
   },
-  error: {
-    color: 'red',
+  sensorCard: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  deviceName: {
     fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2980b9',
+    marginBottom: 4,
   },
-});
+  timestamp: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    marginBottom: 8,
+  },
+  sensorData: {
+    marginTop: 8,
+  },
+  dataRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  dataLabel: {
+    fontSize: 14,
+    color: '#34495e',
+  },
+  dataValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2c3e50',
+  },
+  errorContainer: {
+    backgroundColor: '#fdecea',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  errorText: {
+    color: '#e74c3c',
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#7f8c8d',
+  },
+  noDataText: {
+    textAlign: 'center',
+    color: '#7f8c8d',
+    marginVertical: 20,
+  },
+})
 
-export default SensorScreen;
+export default SmartFarm
