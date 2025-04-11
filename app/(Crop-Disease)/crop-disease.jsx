@@ -85,7 +85,7 @@ const CropDisease = () => {
     });
 
     try {
-      const response = await fetch('http://192.168.1.100:8002/predict/', {
+      const response = await fetch('http://192.168.220.31:8002/predict/', {
         method: 'POST',
         body: formData,
         headers: {
