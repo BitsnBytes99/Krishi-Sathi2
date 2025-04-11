@@ -1,4 +1,3 @@
-// screens/SignIn.js
 import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import React, { useState } from "react";
 import { useFonts } from "expo-font";
@@ -11,7 +10,7 @@ const SignIn = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
-  const { signIn, loading } = useAuth();
+  const { signIn, loading, error } = useAuth();
 
   // Load fonts
   const [fontsLoaded] = useFonts({
@@ -24,21 +23,20 @@ const SignIn = () => {
       Alert.alert("Error", "Please fill in all fields");
       return;
     }
-
+  
     try {
       await signIn(email, password);
       router.replace("/(tabs)/home");
     } catch (error) {
-      let errorMessage = "Failed to sign in";
+      let errorMessage = "welcome you";
       
-      // Handle specific Supabase errors
-      if (error.message.includes("Invalid login credentials")) {
-        errorMessage = "Invalid email or password";
+      if (error.message.includes("User profile not found")) {
+        errorMessage = "Account exists but profile incomplete. Please contact support.";
       } else if (error.message.includes("Email not confirmed")) {
         errorMessage = "Please verify your email first";
       }
       
-      Alert.alert("Sign In Error", errorMessage);
+      Alert.alert("Sign In successful", errorMessage);
     }
   };
 
@@ -55,6 +53,12 @@ const SignIn = () => {
       <Text className="text-3xl font-bold text-center mb-8" style={{ fontFamily: "Poppins_SemiBold" }}>
         Welcome Back
       </Text>
+
+      {error && (
+        <Text className="text-red-500 text-center mb-4" style={{ fontFamily: "Inter_Regular" }}>
+          {error}
+        </Text>
+      )}
 
       <TextInput
         placeholder="Email"

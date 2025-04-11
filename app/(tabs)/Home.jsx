@@ -1,4 +1,4 @@
-import { View, Text } from "react-native";
+import { View, Text, ScrollView } from "react-native";
 import React from "react";
 import Header from "../../components/Header"; 
 import Slider from "../../components/Slider";
@@ -7,7 +7,7 @@ import Features from "../../components/Features"; // Corrected import for Slider
 
 const Home = () => {
   return (
-    <View >
+    <ScrollView >
        
       {/* Include the Header component at the top */}
       <Header />
@@ -19,7 +19,7 @@ const Home = () => {
 
       <Features/>
 
-    </View>
+    </ScrollView>
   );
 };
 

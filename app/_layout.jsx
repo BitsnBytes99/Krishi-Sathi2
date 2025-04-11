@@ -34,6 +34,7 @@ function AuthLayout() {
   }
 
   return (
+   
     <Stack>
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -44,6 +45,7 @@ function AuthLayout() {
       <Stack.Screen name="(Weather)" options={{ headerShown: false }} />
       <Stack.Screen name="(Farmer-Connect)" options={{ headerShown: false }} />
     </Stack>
+    
   );
 }
 
