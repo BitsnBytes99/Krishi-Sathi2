@@ -1,15 +1,17 @@
-import { View, Text, ImageBackground, TextInput, TouchableOpacity, Alert } from 'react-native'
+import { View, Text, ImageBackground, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
 import React, { useState } from 'react'
 import images from '../../constants/images'
 import { router } from 'expo-router'
+import { useAuth } from '../../context/AuthContext'
 
-const signup = () => {
+const Signup = () => {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [district, setDistrict] = useState('')
   const [phone, setPhone] = useState('')
+  const { signUp, loading } = useAuth();
   
   const districts = [
     "Ahmednagar",
@@ -51,15 +53,56 @@ const signup = () => {
   ];
   
 
-  const handleSignup = () => {
-    if (!name || !email || !password || !district || !phone) {
-      Alert.alert("Error", "All fields are required.")
-      return
+  const handleSignup = async () => {
+    // Basic validation
+    if (!name || name.length < 2) {
+      Alert.alert("Error", "Please enter a valid name");
+      return;
     }
-
-    // You can proceed to handle signup logic here (API call, etc.)
-    Alert.alert("Success", "Signup successful!")
-  }
+    
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      Alert.alert("Error", "Please enter a valid email");
+      return;
+    }
+    
+    if (!password || password.length < 6) {
+      Alert.alert("Error", "Password must be at least 6 characters");
+      return;
+    }
+    
+    if (!district) {
+      Alert.alert("Error", "Please select your district");
+      return;
+    }
+    
+    if (!phone || phone.length < 10) {
+      Alert.alert("Error", "Please enter a valid phone number");
+      return;
+    }
+  
+    try {
+      await signUp(email, password, {
+        name,
+        phone,
+        district
+      });
+      
+      // Directly navigate to home after successful signup
+      router.replace("/(tabs)/home");
+    } catch (error) {
+      let errorMessage = "Failed to create account";
+      
+      if (error.message.includes("Email already registered")) {
+        errorMessage = "This email is already registered";
+      } else if (error.message.includes("password")) {
+        errorMessage = "Password must be at least 6 characters";
+      } else if (error.message.includes("User already registered")) {
+        errorMessage = "This email is already registered";
+      }
+      
+      Alert.alert("Sign Up Error", errorMessage);
+    }
+  };
 
   return (
     <ImageBackground
@@ -91,6 +134,7 @@ const signup = () => {
           onChangeText={setEmail}
           placeholder="Email"
           keyboardType="email-address"
+          autoCapitalize="none"
           style={{
             backgroundColor: '#fff',
             borderRadius: 10,
@@ -152,30 +196,36 @@ const signup = () => {
           ))}
         </Picker>
 
-
         {/* Signup Button */}
         <TouchableOpacity
           onPress={handleSignup}
+          disabled={loading}
           style={{
             backgroundColor: "#678a1d",
             paddingVertical: 15,
             borderRadius: 10,
             alignItems: 'center',
+            opacity: loading ? 0.5 : 1
           }}
         >
-          <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Sign Up</Text>
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Sign Up</Text>
+          )}
         </TouchableOpacity>
       </View>
+      
       {/* Redirect to Sign In */}
       <View style={{ marginTop: 20, alignItems: 'center' }}>
-        <TouchableOpacity onPress={() => router.push("/sign-in")} className="mt-4">
-          <Text className="text-center text-blue-600" style={{ fontFamily: "Inter_Regular" }}>
-            Don't have an account? Sign Up
+        <TouchableOpacity onPress={() => router.push("/sign-in")}>
+          <Text style={{ color: 'blue', textAlign: 'center' }}>
+            Already have an account? Sign In
           </Text>
         </TouchableOpacity>
-        </View>
+      </View>
     </ImageBackground>
   )
 }
 
-export default signup
+export default Signup
