@@ -20,7 +20,7 @@ const Features = () => {
 
   return (
     <View className="flex-2 justify-center bg-gray-100 p-4">
-      <Text className="text-xl font-bold mb-4"> Select an Option</Text>
+      <Text className="text-xl font-[OutfitBold] m-4 "> Select an Option</Text>
 
       {/* Grid Layout */}
       <View className="flex-row flex-wrap justify-center gap-9">

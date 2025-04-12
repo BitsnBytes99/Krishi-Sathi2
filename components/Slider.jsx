@@ -9,7 +9,7 @@ const Slider = () => {
   // Hardcoded slider images for UI demonstration
   const sliderList = [
     "https://media.istockphoto.com/id/1092520698/photo/indian-farmer-at-onion-field.jpg?s=612x612&w=0&k=20&c=gvu-DzA17EyVSNzvdf7L3R8q0iIvLapG15ktOimqXqU=",
-    "https://png.pngtree.com/background/20230823/original/pngtree-3d-rendering-agriculture-drone-spraying-fertilizer-on-sugar-cane-farm-picture-image_4788235.jpg",
+    "https://hellokrushi.com/wp-content/uploads/2023/12/Drone-Mission-GR-Maharashtra-Government.jpg",
     "https://www.cultyvate.com/wp-content/uploads/2023/02/Farmer-Empowered-with-mobile-tech.jpg",
   ];
 

@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
   },
   userMessage: {
     alignSelf: 'flex-end',
-    backgroundColor: '#007AFF',
+    backgroundColor: '#4CBB17',
     borderBottomRightRadius: 0,
   },
   botMessage: {
@@ -121,6 +121,7 @@ const styles = StyleSheet.create({
   },
   userMessageText: {
     color: '#fff',
+    backgroundColor: '#f0f0f0',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -143,10 +144,11 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: '#007AFF',
+    backgroundColor: 'green',
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
+    
   },
   sendButtonText: {
     color: '#fff',

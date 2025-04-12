@@ -1,18 +1,27 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Entypo from '@expo/vector-icons/Entypo';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 export default function TabLayout() {
   return (
-   <Tabs>
+   <Tabs screenOptions={{
+     tabBarStyle: {
+       height: 70,  // Increased from default ~50px
+     },
+     tabBarItemStyle: {
+       paddingVertical: 10,  // Added vertical padding
+     },
+     tabBarIconStyle: {
+       marginBottom: -3,  // Better icon alignment
+     },
+   }}>
     <Tabs.Screen name='Home' options={
       { 
         title:'Home',
         headerShown: false,
-        tabBarIcon:({color})=><Entypo name="home" size={24} color="black" />
+        tabBarIcon:({color})=><Entypo name="home" size={28} color="black" />  // Increased from 24
       }
     }/>
     <Tabs.Screen name='chatbox'
@@ -20,7 +29,7 @@ export default function TabLayout() {
       { 
         title:'Chatbox',
         headerShown: false,
-        tabBarIcon:({color})=><Ionicons name="chatbox" size={24} color="black" />
+        tabBarIcon:({color})=><Ionicons name="chatbox" size={28} color="black" />  // Increased from 24
       }
     }/>
     <Tabs.Screen name='smartfarm'
@@ -28,15 +37,15 @@ export default function TabLayout() {
       { 
         title:'SmartFarm',
         headerShown: false,
-        tabBarIcon:({color})=><MaterialIcons name="devices-other" size={24} color="black" />
+        tabBarIcon:({color})=><MaterialIcons name="devices-other" size={28} color="black" />  // Increased from 24
       }
     }/>
     <Tabs.Screen name='profile'
     options={
       { 
-        title:'Profile',
+        title:'Voice Support',
         headerShown: false,
-        tabBarIcon:({color})=><Ionicons name="person-sharp" size={24} color="black" />
+        tabBarIcon:({color})=><Ionicons name="person-sharp" size={28} color="black" />  // Increased from 24
       }
     }/>
    </Tabs>

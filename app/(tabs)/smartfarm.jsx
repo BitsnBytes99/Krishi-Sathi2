@@ -14,29 +14,29 @@ const SmartFarm = () => {
   const API_BASE_URL = 'http://192.168.220.31:8080'
 
   // In your fetchData function:
-const fetchData = async () => {
-  try {
-    setRefreshing(true)
-    setLoading(true)
-    setError(null)
-    
-    // Fetch all sensor data
-    const dataResponse = await axios.get(`${API_BASE_URL}/all-data`)
-    setSensorData(dataResponse.data)
-    
-    // Get latest heatmap URL
-    const heatmapResponse = await axios.get(`${API_BASE_URL}/latest-heatmap-url`)
-    setHeatmapUri(`${API_BASE_URL}${heatmapResponse.data.url}`)
-    
-    setLastUpdated(new Date().toLocaleTimeString())
-  } catch (error) {
-    console.error('Error fetching data:', error)
-    setError(`Failed to load data: ${error.message}`)
-  } finally {
-    setRefreshing(false)
-    setLoading(false)
+  const fetchData = async () => {
+    try {
+      setRefreshing(true)
+      setLoading(true)
+      setError(null)
+      
+      // Fetch all sensor data
+      const dataResponse = await axios.get(`${API_BASE_URL}/all-data`)
+      setSensorData(dataResponse.data)
+      
+      // Get heatmap - add timestamp to avoid caching
+      const timestamp = new Date().getTime()
+      setHeatmapUri(`${API_BASE_URL}/get-heatmap?t=${timestamp}`)
+      
+      setLastUpdated(new Date().toLocaleTimeString())
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setError(`Failed to load data: ${error.message}`)
+    } finally {
+      setRefreshing(false)
+      setLoading(false)
+    }
   }
-}
 
   useEffect(() => {
     // Initial data fetch
@@ -90,7 +90,7 @@ const fetchData = async () => {
         <RefreshControl refreshing={refreshing} onRefresh={fetchData} />
       }
     >
-      <Text style={styles.title}>Smart Farm Monitoring</Text>
+      <Text className="text-3xl font-[OutfitBold] text-green-800 mb-2">Smart Farm Monitoring</Text>
       
       {lastUpdated && (
         <Text style={styles.lastUpdated}>Last updated: {lastUpdated}</Text>
